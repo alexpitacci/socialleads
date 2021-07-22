@@ -1,0 +1,13 @@
+{
+  "name": "keycloak-profile-resolver",
+  "main": "index.js",
+  "author": "Alex Pitacci",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.19.0",
+    "graphql": "^15.5.1",
+    "graphql-tag": "^2.11.0",
+    "jsonwebtoken": "^8.5.1",
+    "node-fetch": "^2.6.1"
+  }
+}

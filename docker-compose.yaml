@@ -1,0 +1,71 @@
+version: "3.6"
+services:
+  postgres:
+    image: postgres:12
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgrespassword
+  graphql-engine:
+    image: hasura/graphql-engine:v2.0.1
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "postgres"
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      ## uncomment next line to set an admin secret
+      HASURA_GRAPHQL_ADMIN_SECRET: secretkey
+      HASURA_GRAPHQL_JWT_SECRET: '{"type": "RS256", "key": "-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAj0CsydCvZwCHeYypWhgJE91hWfwsULFR/ea/2Vmp6jLE2iO3HEaa+TJ3IFBE4NsFjYrzjP/qfGlxShZ758sOxBMRbNvoe9g6cWOZ1MDDzpiRwp6p39AqAzbNwZAvfAkkv5qem5K4tAWFLLcpc3NLO1D5V3eR7E4KtyZbetrtnOZVSkqaT37+NHS+tJgfayyRtjgdMqZhxuztmKj3PLFYZ66+b3UU9UArBfZEalLa9CuP1Evoui5z8LiF8aTUt6qtONvYNEpgnyqw2PMhNTq6hEvfuGg5h2UnpeLWRZqJmNcdW6AnR02qi2F0p9bQugHe8BPds6i9muTVk0JcyYomtQIDAQAB\n-----END CERTIFICATE-----"}'
+  postgres2:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres2
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: Pa55w0rd
+      # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+      #JDBC_PARAMS: "ssl=true"
+    ports:
+      - 8088:8080
+    depends_on:
+      - postgres2
+  keycloak-profile:
+    build: keycloak-profile
+    ports:
+      - 3000:3000
+    environment:
+      PORT: 3000
+      KEYCLOAK_HOST: "http://keycloak:8080"
+      KEYCLOAK_CLIENT_ID: "keycloak-users-view"
+      KEYCLOAK_CLIENT_SECRET: "e628741c-640f-4a6d-afa0-18a3da99980f"
+  keycloak-resolver:
+    build: keycloak-resolver
+    ports:
+      - 3001:3001
+    environment:
+      PORT: 3001
+      KEYCLOAK_HOST: "http://keycloak:8080"
+      KEYCLOAK_CLIENT_ID: "keycloak-users-view"
+      KEYCLOAK_CLIENT_SECRET: "e628741c-640f-4a6d-afa0-18a3da99980f"
+
+volumes:
+  db_data:
+  postgres_data:
